@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from obspy import UTCDateTime
 from hiselect import HiSelector
 
-EVENT_DIR = '../../Greece_region/Data/20250204130414/'
+EVENT_DIR = '../data/20250204130414/'
 ORIG_TIME = UTCDateTime('2025-02-04T13:04:14')
 EVLA, EVLO = 36.5658, 25.7261
 EVDP       = 10.0      # depth in km
