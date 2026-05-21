@@ -8,10 +8,10 @@ Given a directory of ZRT SAC files for a single event, HiSelect scores every can
 
 | Metric | Description |
 |---|---|
-| SNR | Signal-to-noise ratio over the S-wave window vs. pre-P noise |
+| SNR | Signal-to-noise ratio over the surface wave window vs. pre-P noise |
 | CC | Peak cross-correlation with the azimuth-sector waveform stack |
 | Distance score | Magnitude-dependent epicentral distance weight (Scognamiglio et al. 2009) |
-| Azimuthal coverage | Effective station number C (Ekström 2006, Eq. 10) |
+| Azimuthal coverage | Effective station number (Ekström 2006, Eq. 10) |
 
 Station 1 is chosen by the highest combined score. Each subsequent station minimises the combined rank of score and azimuthal coverage, so the selected set fills azimuthal gaps while maintaining high data quality.
 
