@@ -29,7 +29,7 @@ def _plot_map_cartopy(meta, selected_idx, evla, evlo, evmag, path_out):
     sel_set = set(selected_idx)
     lats = [m['stla'] for m in meta]
     lons = [m['stlo'] for m in meta]
-    pad  = 3.0
+    pad  = 2.0
     extent = [min(lons + [evlo]) - pad, max(lons + [evlo]) + pad,
               min(lats + [evla]) - pad, max(lats + [evla]) + pad]
 
@@ -76,7 +76,7 @@ def _plot_map_cartopy(meta, selected_idx, evla, evlo, evmag, path_out):
     ax.set_title('HiSelect: Station Map')
     out = os.path.join(path_out, 'hiselect_map.png')
     plt.tight_layout()
-    plt.savefig(out, dpi=200, bbox_inches='tight')
+    plt.savefig(out, dpi=300, bbox_inches='tight')
     plt.close()
     # print(f'Map saved: {out}')
 
