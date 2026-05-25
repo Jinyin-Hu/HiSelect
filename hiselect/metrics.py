@@ -82,6 +82,13 @@ def _velmodel_to_nd(model_path):
             nd_lines.append(
                 f'{depth:.4f}  {vp:.4f}  {vs:.4f}  {rho:.4f}  {qp:.2f}  {qs:.2f}')
 
+    # TauPy sets the planet radius to the deepest entry in the nd file.
+    # Without this line it would use the model's deepest layer as the radius,
+    # making all distance-dependent ray tracing completely wrong.
+    _, vp_hs, vs_hs, rho_hs, qp_hs, qs_hs = layers[-1]
+    nd_lines.append(
+        f'6371.0000  {vp_hs:.4f}  {vs_hs:.4f}  {rho_hs:.4f}  {qp_hs:.2f}  {qs_hs:.2f}')
+
     tmp = tempfile.NamedTemporaryFile(suffix='.nd', delete=False, mode='w')
     tmp.write('\n'.join(nd_lines) + '\n')
     tmp.close()
@@ -115,15 +122,16 @@ def _get_taup(model):
 
 def _get_phase_arrival(arrivals, phases):
     """
-    Return travel time (s) of the first phase in *phases* found in *arrivals*.
+    Return travel time (s) of the earliest arrival among *phases*.
 
-    *phases* is tried in order; raises ValueError if none are found.
+    Raises ValueError if none of *phases* are found in *arrivals*.
     """
-    phase_names = [a.phase.name for a in arrivals]
-    for ph in phases:
-        if ph in phase_names:
-            return float(arrivals[phase_names.index(ph)].time)
-    raise ValueError(f'None of {phases} found; available: {phase_names}')
+    phase_set = set(phases)
+    matching = [a.time for a in arrivals if a.phase.name in phase_set]
+    if not matching:
+        phase_names = [a.phase.name for a in arrivals]
+        raise ValueError(f'None of {phases} found; available: {phase_names}')
+    return float(min(matching))
 
 
 # ---------------------------------------------------------------------------
