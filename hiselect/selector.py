@@ -27,17 +27,16 @@ from .io import write_station_file, write_weights, copy_selected_data
 # Ranking helpers
 # ---------------------------------------------------------------------------
 
-def rank_data_score(data):
+def rank_data_score(data, tiebreak=None):
     """
     Rank 1-D array in ascending order (rank 1 = smallest value).
-    Ties are broken by a random perturbation to avoid deterministic bias.
+    Ties are broken by *tiebreak* (ascending; smallest wins).
+    If *tiebreak* is None, ties are broken by position (stable, deterministic).
     """
     data = np.asarray(data, dtype=float)
     n    = len(data)
-    np.random.seed(1000)
-    rng  = np.random.default_rng()
-    jitter = rng.random(n)
-    order  = np.lexsort((jitter, data))
+    tb   = np.asarray(tiebreak, dtype=float) if tiebreak is not None else np.arange(n, dtype=float)
+    order  = np.lexsort((tb, data))
     ranks  = np.empty(n, dtype=float)
     ranks[order] = np.arange(1, n + 1)
     return ranks
@@ -217,11 +216,12 @@ class HiSelector:
         """Iterative selection: first by score, then by combined score+coverage."""
         ns    = len(self.meta)
         score = self.combined
-        azi   = np.array([m['azi'] for m in self.meta])
+        azi   = np.array([m['azi']  for m in self.meta])
+        dist  = np.array([m['dist'] for m in self.meta])
 
-        # Station 1: highest combined score
+        # Station 1: highest combined score; ties broken by distance (nearest wins)
         rank_all = rank_data_score(
-            1.0 / np.where(score > 0, score, 1e-10))
+            1.0 / np.where(score > 0, score, 1e-10), tiebreak=dist)
         i_first  = int(np.argmin(rank_all))
         selected  = [i_first]
         remaining = list(range(ns))
@@ -234,19 +234,20 @@ class HiSelector:
             if not remaining:
                 break
             # effective number of stations C for each candidate (higher = better)
-            az_cov = np.array([
+            az_cov   = np.array([
                 azimuth_coverage(azi[selected], azi[k])
                 for k in remaining])
+            dist_rem = dist[remaining]
             print(f'  #{step+1}  effective N (best candidate) = '
                   f'{az_cov.max():.2f}')
 
-            rank_azi   = rank_data_score(-az_cov)   # negate: rank 1 = highest C
+            rank_azi   = rank_data_score(-az_cov, tiebreak=dist_rem)   # negate: rank 1 = highest C
             score_rem  = score[remaining]
             rank_score = rank_data_score(
-                1.0 / np.where(score_rem > 0, score_rem, 1e-10))
+                1.0 / np.where(score_rem > 0, score_rem, 1e-10), tiebreak=dist_rem)
 
             combined_rank = rank_azi + rank_score
-            best_local    = int(np.argmin(rank_data_score(combined_rank)))
+            best_local    = int(np.argmin(rank_data_score(combined_rank, tiebreak=dist_rem)))
             i_next        = remaining[best_local]
 
             selected.append(i_next)
