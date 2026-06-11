@@ -34,6 +34,7 @@ def rank_data_score(data):
     """
     data = np.asarray(data, dtype=float)
     n    = len(data)
+    np.random.seed(1000)
     rng  = np.random.default_rng()
     jitter = rng.random(n)
     order  = np.lexsort((jitter, data))
@@ -70,8 +71,9 @@ class HiSelector:
         Surface-wave signal window length in seconds (default 300).
     noise_duration : float
         Pre-P noise window length in seconds (default 200).
-    filter_dict    : dict
+    filter_dict    : dict or None
         Bandpass filter parameters: fmin, fmax, corners, zerophase.
+        Pass None to skip filtering entirely (raw data used for metrics).
     n_clusters     : int
         Number of K-means azimuth clusters for CC computation (default 8).
     weights        : tuple of three floats
@@ -100,8 +102,7 @@ class HiSelector:
         self.n_select       = n_select
         self.window_length  = window_length
         self.noise_duration = noise_duration
-        self.filter_dict    = filter_dict or {
-            'fmin': 0.03, 'fmax': 0.06, 'corners': 4, 'zerophase': False}
+        self.filter_dict    = filter_dict   # None → no filtering
         self.n_clusters     = n_clusters
         self.w_snr, self.w_dist, self.w_cc = weights
         self.taup_model     = taup_model
@@ -156,7 +157,8 @@ class HiSelector:
                 # print(f'  SKIP {net}.{sta}: could not load ZRT')
                 continue
 
-            filtered = filter_stream(full_st, self.filter_dict)
+            filtered = (filter_stream(full_st, self.filter_dict)
+                        if self.filter_dict is not None else full_st.copy())
             sig_st   = cut_signal_window(
                 filtered, self.orig_time, dist_km, self.window_length,
                 taup_model=self.taup_model,
