@@ -135,9 +135,13 @@ def plot_waveforms(meta, selected_idx, signal_streams, orig_time, path_out):
     vertically so rows do not overlap.  The x-axis is time relative to the
     event origin.
     """
-    # collect selected entries sorted by distance
+    # Sort by decreasing distance so row=0 sits at y=0 (bottom) and the
+    # nearest station (last row) sits at the largest y value (top).
+    # matplotlib renders larger y values higher, so nearest ends up at the top
+    # with correct waveform polarity — no axis inversion needed.
     entries = sorted(
-        [(meta[i]['dist'], i) for i in selected_idx], key=lambda x: x[0])
+        [(meta[i]['dist'], i) for i in selected_idx], key=lambda x: x[0],
+        reverse=True)
     n_sta = len(entries)
     comps = ('Z', 'R', 'T')
 
@@ -149,9 +153,8 @@ def plot_waveforms(meta, selected_idx, signal_streams, orig_time, path_out):
     for row, (dist_km, idx) in enumerate(entries):
         m  = meta[idx]
         st = signal_streams[idx]
-        label = f'{m["net"]}.{m["sta"]}  ({dist_km:.0f} km)'
         yticks.append(row)
-        ylabels.append(label)
+        ylabels.append(f'{m["net"]}.{m["sta"]}  ({dist_km:.0f} km)')
 
         # peak across all three components for this station
         station_peak = max(
@@ -171,8 +174,8 @@ def plot_waveforms(meta, selected_idx, signal_streams, orig_time, path_out):
             if station_peak > 0:
                 data /= station_peak
             ax.plot(t, data + row, color='k', linewidth=0.5)
-            # amplitude label above the trace
-            ax.text(t[0], row - 0.1, f'{peak:.2e}',
+            # amplitude label just above the trace band
+            ax.text(t[0], row + 0.45, f'{peak:.2e}',
                     fontsize=5, va='bottom', ha='left', color='dimgray')
 
     for ax, comp in zip(axes, comps):
@@ -184,7 +187,6 @@ def plot_waveforms(meta, selected_idx, signal_streams, orig_time, path_out):
 
     axes[0].set_yticks(yticks)
     axes[0].set_yticklabels(ylabels, fontsize=7)
-    axes[0].invert_yaxis()                         # nearest station at top
 
     fig.suptitle('HiSelect: selected station waveforms (signal window)',
                  fontsize=12, y=0.98)
