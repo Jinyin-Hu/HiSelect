@@ -259,13 +259,13 @@ class HiSelector:
 
     # ------------------------------------------------------------------
     def write_outputs(self, path_out=None):
-        """Write station_file.txt and weights*.dat."""
+        """Write station_file.txt (all candidates) and weights*.dat (selected only)."""
         if not self.selected_idx:
             raise RuntimeError('Call run() before write_outputs().')
         path_out = path_out or self.event_dir
         sel_meta = [self.meta[i] for i in self.selected_idx]
-        write_station_file(sel_meta, path_out)
-        write_weights(sel_meta, path_out)
+        write_station_file(self.meta, path_out)   # all unique stations
+        write_weights(sel_meta, path_out)          # selected only
 
     # ------------------------------------------------------------------
     def plot_summary(self, path_out=None):

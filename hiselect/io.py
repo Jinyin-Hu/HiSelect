@@ -24,11 +24,12 @@ def write_station_file(selected_meta, path_out):
     rows = sorted(selected_meta, key=lambda m: m['dist'])
     out  = os.path.join(path_out, 'station_file.txt')
     with open(out, 'w') as fh:
+        fh.write(f'# {"STA":<6} {"NET":<4} {"LAT":>9} {"LON":>10} {"DIST_KM":>9} {"AZI_DEG":>7} {"BAZ_DEG":>7}\n')
         for m in rows:
             fh.write(
                 f'{m["sta"]:<6} {m["net"]:<4} '
                 f'{m["stla"]:9.4f} {m["stlo"]:10.4f} '
-                f'{m["dist"]:9.3f} {m["baz"]:7.2f}\n')
+                f'{m["dist"]:9.3f} {m["azi"]:7.2f} {m["baz"]:7.2f}\n')
     # print(f'Written {out}  ({len(rows)} stations)')
 
 
