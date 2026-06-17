@@ -8,6 +8,7 @@ plot_scores — bar charts of SNR, distance, CC, and combined scores.
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from .metrics import azimuth_coverage
 
 
 # ---------------------------------------------------------------------------
@@ -33,7 +34,7 @@ def _plot_map_cartopy(meta, selected_idx, evla, evlo, evmag, path_out):
     extent = [min(lons + [evlo]) - pad, max(lons + [evlo]) + pad,
               min(lats + [evla]) - pad, max(lats + [evla]) + pad]
 
-    fig  = plt.figure(figsize=(10, 8))
+    fig  = plt.figure(figsize=(8, 6))
     proj = ccrs.PlateCarree()
     ax   = fig.add_subplot(1, 1, 1, projection=proj)
     ax.set_extent(extent, crs=proj)
@@ -48,29 +49,29 @@ def _plot_map_cartopy(meta, selected_idx, evla, evlo, evmag, path_out):
     for i, m in enumerate(meta):
         if i in sel_set:
             continue
-        ax.scatter(m['stlo'], m['stla'], marker='v', s=70, color='lightgray',
+        ax.scatter(m['stlo'], m['stla'], marker='^', s=70, color='lightgray',
                    edgecolors='#E69F00', linewidths=0.4, zorder=5, transform=proj)
 
     for i, m in enumerate(meta):
         if i not in sel_set:
             continue
-        ax.scatter(m['stlo'], m['stla'], marker='v', s=70, color='steelblue',
+        ax.scatter(m['stlo'], m['stla'], marker='^', s=70, color='steelblue',
                    edgecolors='#E69F00', linewidths=0.4, zorder=7, transform=proj)
         ax.text(m['stlo'] + 0.05, m['stla'] + 0.05,
                 f'{m["net"]}.{m["sta"]}', fontsize=4,
                 transform=proj, zorder=8)
 
-    ax.scatter([evlo], [evla], marker='*', s=300, color='red',
-               edgecolors='k', linewidths=0.5, zorder=7, transform=proj)
+    ax.scatter([evlo], [evla], marker='o', s=300, color='yellow',
+               edgecolors='yellow', linewidths=0.5, zorder=7, transform=proj)
 
     from matplotlib.lines import Line2D
     legend_handles = [
-        Line2D([0], [0], marker='v', color='w', markerfacecolor='steelblue',
+        Line2D([0], [0], marker='^', color='w', markerfacecolor='steelblue',
                markeredgecolor='#E69F00', markersize=8, label='Selected'),
-        Line2D([0], [0], marker='v', color='w', markerfacecolor='lightgray',
+        Line2D([0], [0], marker='^', color='w', markerfacecolor='lightgray',
                markeredgecolor='#E69F00', markersize=8, label='Unselected'),
-        Line2D([0], [0], marker='*', color='w', markerfacecolor='red',
-               markeredgecolor='k', markersize=10, label=f'Event M{evmag}'),
+        Line2D([0], [0], marker='o', color='w', markerfacecolor='yellow',
+               markeredgecolor='yellow', markersize=10, label=f'Event M{evmag}'),
     ]
     ax.legend(handles=legend_handles, loc='lower right', fontsize=8)
     ax.set_title('HiSelect: Station Map')
@@ -88,30 +89,30 @@ def _plot_map_mpl(meta, selected_idx, evla, evlo, evmag, path_out):
     for i, m in enumerate(meta):
         if i in sel_set:
             continue
-        ax.scatter(m['stlo'], m['stla'], marker='v', s=70, color='lightgray',
+        ax.scatter(m['stlo'], m['stla'], marker='^', s=70, color='lightgray',
                    edgecolors='#E69F00', linewidths=0.4, zorder=5)
 
     for i, m in enumerate(meta):
         if i not in sel_set:
             continue
-        ax.scatter(m['stlo'], m['stla'], marker='v', s=70, color='steelblue',
+        ax.scatter(m['stlo'], m['stla'], marker='^', s=70, color='steelblue',
                    edgecolors='#E69F00', linewidths=0.4, zorder=7)
         ax.text(m['stlo'] + 0.05, m['stla'] + 0.05,
                 f'{m["net"]}.{m["sta"]}', fontsize=4, zorder=8)
-    ax.scatter([evlo], [evla], marker='*', s=300, color='red',
-               edgecolors='k', linewidths=0.5, zorder=7)
+    ax.scatter([evlo], [evla], marker='o', s=300, color='yellow',
+               edgecolors='yellow', linewidths=0.5, zorder=7)
     ax.set_xlabel('Longitude')
     ax.set_ylabel('Latitude')
     ax.set_title('HiSelect: Station Map')
 
     from matplotlib.lines import Line2D
     legend_handles = [
-        Line2D([0], [0], marker='v', color='w', markerfacecolor='steelblue',
+        Line2D([0], [0], marker='^', color='w', markerfacecolor='steelblue',
                markeredgecolor='#E69F00', markersize=8, label='Selected'),
-        Line2D([0], [0], marker='v', color='w', markerfacecolor='lightgray',
+        Line2D([0], [0], marker='^', color='w', markerfacecolor='lightgray',
                markeredgecolor='#E69F00', markersize=8, label='Unselected'),
-        Line2D([0], [0], marker='*', color='w', markerfacecolor='red',
-               markeredgecolor='k', markersize=10, label=f'Event M{evmag}'),
+        Line2D([0], [0], marker='o', color='w', markerfacecolor='yellow',
+               markeredgecolor='yellow', markersize=10, label=f'Event M{evmag}'),
     ]
     ax.legend(handles=legend_handles, loc='lower right', fontsize=8)
     ax.grid(True, linestyle='--', linewidth=0.3)
@@ -212,18 +213,19 @@ def plot_scores(meta, snr, dist_sc, cc, combined, selected_idx, path_out):
     labels  = [f'{m["net"]}.{m["sta"]}' for m in meta]
     order   = np.argsort(combined)[::-1]   # descending combined score
 
-    # effective number of stations C for the selected set
-    sel_azi = np.sort(np.deg2rad(
-        np.array([meta[i]['azi'] for i in selected_idx])) % (2 * np.pi))
-    n_sel = len(sel_azi)
-    raw = sum((sel_azi[i + 1] - sel_azi[i]) ** 2 for i in range(n_sel - 1))
-    raw += (2 * np.pi + sel_azi[0] - sel_azi[-1]) ** 2
-    raw /= (2 * np.pi) ** 2
-    eff_C = 1.0 / raw if raw > 0 else 0.0
+    # effective number of stations C for the selected set (Ekström 2006 Eq.10)
+    sel_azi_deg = [meta[i]['azi'] for i in selected_idx]
+    n_sel = len(sel_azi_deg)
+    if n_sel > 1:
+        eff_C = azimuth_coverage(sel_azi_deg[:-1], sel_azi_deg[-1])
+    elif n_sel == 1:
+        eff_C = 1.0
+    else:
+        eff_C = 0.0
 
     panels  = [
         (snr,      'SNR (normalised)'),
-        (dist_sc,  'Distance score D'),
+        (dist_sc,  'Distance score'),
         (cc,       'CC score'),
         (combined, 'Combined score'),
     ]

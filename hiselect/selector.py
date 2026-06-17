@@ -252,8 +252,9 @@ class HiSelector:
 
             selected.append(i_next)
             remaining.remove(i_next)
+            actual_C = azimuth_coverage(azi[selected[:-1]], azi[selected[-1]])
             print(f'  #{step+1}  {self.meta[i_next]["net"]}.{self.meta[i_next]["sta"]}'
-                  f'  score={score[i_next]:.3f}')
+                  f'  score={score[i_next]:.3f}  actual effective N = {actual_C:.2f}')
 
         self.selected_idx = selected
 
